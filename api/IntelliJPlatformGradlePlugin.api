@@ -8,7 +8,9 @@ public final class org/jetbrains/intellij/platform/gradle/Constants {
 	public static final field CACHE_DIRECTORY_IDES Ljava/lang/String;
 	public static final field CACHE_DIRECTORY_IVY Ljava/lang/String;
 	public static final field DEFAULT_MAIN_CLASS Ljava/lang/String;
+	public static final field IDEA_CORE Ljava/lang/String;
 	public static final field INSTANCE Lorg/jetbrains/intellij/platform/gradle/Constants;
+	public static final field LAYOUT_INDEX Ljava/lang/String;
 	public static final field TOOLBOX_IGNORE Ljava/lang/String;
 }
 
@@ -2847,11 +2849,6 @@ public abstract class org/jetbrains/intellij/platform/gradle/services/ExtractorS
 	public final fun extract (Ljava/nio/file/Path;Ljava/nio/file/Path;)V
 }
 
-public abstract class org/jetbrains/intellij/platform/gradle/services/IdesManagerService : org/gradle/api/services/BuildService {
-	public fun <init> ()V
-	public final fun resolve (Ljava/nio/file/Path;)Lcom/jetbrains/plugin/structure/ide/Ide;
-}
-
 public abstract class org/jetbrains/intellij/platform/gradle/services/IntelliJPlatformProjectsService : org/gradle/api/services/BuildService {
 	public fun <init> ()V
 	public final fun getPlatformPathProvider (Ljava/lang/String;)Lorg/gradle/api/provider/Provider;
@@ -3206,7 +3203,7 @@ public final class org/jetbrains/intellij/platform/gradle/tasks/PrepareTestTask$
 public abstract class org/jetbrains/intellij/platform/gradle/tasks/PrintBundledModulesTask : org/gradle/api/DefaultTask, org/jetbrains/intellij/platform/gradle/tasks/aware/IntelliJPlatformVersionAware {
 	public static final field Companion Lorg/jetbrains/intellij/platform/gradle/tasks/PrintBundledModulesTask$Companion;
 	public fun <init> ()V
-	public abstract fun getIdesManager ()Lorg/gradle/api/provider/Property;
+	public abstract fun getIdeLayoutIndexCacheDirectory ()Lorg/gradle/api/file/DirectoryProperty;
 	public fun getPlatformPath ()Ljava/nio/file/Path;
 	public fun getProductInfo ()Lorg/jetbrains/intellij/platform/gradle/models/ProductInfo;
 	public final fun printBundledModules ()V
@@ -3220,7 +3217,7 @@ public final class org/jetbrains/intellij/platform/gradle/tasks/PrintBundledModu
 public abstract class org/jetbrains/intellij/platform/gradle/tasks/PrintBundledPluginsTask : org/gradle/api/DefaultTask, org/jetbrains/intellij/platform/gradle/tasks/aware/IntelliJPlatformVersionAware {
 	public static final field Companion Lorg/jetbrains/intellij/platform/gradle/tasks/PrintBundledPluginsTask$Companion;
 	public fun <init> ()V
-	public abstract fun getIdesManager ()Lorg/gradle/api/provider/Property;
+	public abstract fun getIdeLayoutIndexCacheDirectory ()Lorg/gradle/api/file/DirectoryProperty;
 	public fun getPlatformPath ()Ljava/nio/file/Path;
 	public fun getProductInfo ()Lorg/jetbrains/intellij/platform/gradle/models/ProductInfo;
 	public final fun printBundledPlugins ()V
@@ -3268,11 +3265,13 @@ public abstract class org/jetbrains/intellij/platform/gradle/tasks/RunIdeTask : 
 	public abstract fun getExecutionMode ()Lorg/gradle/api/provider/Property;
 	public fun getPlatformPath ()Ljava/nio/file/Path;
 	public fun getProductInfo ()Lorg/jetbrains/intellij/platform/gradle/models/ProductInfo;
+	public abstract fun getPurgeOldLogDirectories ()Lorg/gradle/api/provider/Property;
 	public abstract fun getSplitModeFrontendBootstrapClasspath ()Lorg/gradle/api/file/ConfigurableFileCollection;
 	public abstract fun getSplitModeFrontendJoinLink ()Lorg/gradle/api/provider/Property;
 	public fun getSplitModeFrontendJoinLinkFile ()Lorg/gradle/api/provider/Provider;
 	public fun getSplitModeFrontendProperties ()Lorg/gradle/api/provider/Provider;
 	public abstract fun getSplitModeServerPort ()Lorg/gradle/api/provider/Property;
+	public final fun setPurgeOldLogDirectoriesOption (Z)V
 	public fun validateIntelliJPlatformVersion ()V
 	public fun validateSplitModeSupport ()V
 }

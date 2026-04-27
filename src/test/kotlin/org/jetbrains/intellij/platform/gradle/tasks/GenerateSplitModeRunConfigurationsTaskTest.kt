@@ -19,11 +19,12 @@ class GenerateSplitModeRunConfigurationsTaskTest : IntelliJPluginTestBase() {
             """
             <component name="ProjectRunConfigurationManager">
               <configuration default="false" name="Run IDE (Backend)" type="GradleRunConfiguration" factoryName="Gradle">
+                <log_file alias="Backend IDE logs" path="${'$'}PROJECT_DIR$/.intellijPlatform/sandbox/*/*/log_runIdeBackend/idea.log" show_all="true" skipped="false" />
                 <ExternalSystemSettings>
                   <option name="executionName" />
                   <option name="externalProjectPath" value="${'$'}PROJECT_DIR${'$'}" />
                   <option name="externalSystemIdString" value="GRADLE" />
-                  <option name="scriptParameters" value="" />
+                  <option name="scriptParameters" value="--purge-old-log-directories" />
                   <option name="taskDescriptions">
                     <list />
                   </option>
@@ -50,11 +51,12 @@ class GenerateSplitModeRunConfigurationsTaskTest : IntelliJPluginTestBase() {
             """
             <component name="ProjectRunConfigurationManager">
               <configuration default="false" name="Run IDE (Frontend)" type="GradleRunConfiguration" factoryName="Gradle">
+                <log_file alias="Frontend IDE logs" path="${'$'}PROJECT_DIR$/.intellijPlatform/sandbox/*/*/log_runIdeFrontend/frontend/*/idea.log" show_all="true" skipped="false" />
                 <ExternalSystemSettings>
                   <option name="executionName" />
                   <option name="externalProjectPath" value="${'$'}PROJECT_DIR${'$'}" />
                   <option name="externalSystemIdString" value="GRADLE" />
-                  <option name="scriptParameters" value="" />
+                  <option name="scriptParameters" value="--purge-old-log-directories" />
                   <option name="taskDescriptions">
                     <list />
                   </option>
@@ -135,11 +137,12 @@ class GenerateSplitModeRunConfigurationsTaskTest : IntelliJPluginTestBase() {
             """
             <component name="ProjectRunConfigurationManager">
               <configuration default="false" name="Run IDE (Backend)" type="GradleRunConfiguration" factoryName="Gradle">
+                <log_file alias="Backend IDE logs" path="${'$'}PROJECT_DIR$/.intellijPlatform/sandbox/*/*/log_runIdeBackend/idea.log" show_all="true" skipped="false" />
                 <ExternalSystemSettings>
                   <option name="executionName" />
                   <option name="externalProjectPath" value="${'$'}PROJECT_DIR${'$'}" />
                   <option name="externalSystemIdString" value="GRADLE" />
-                  <option name="scriptParameters" value="" />
+                  <option name="scriptParameters" value="--purge-old-log-directories" />
                   <option name="taskDescriptions">
                     <list />
                   </option>
@@ -166,11 +169,12 @@ class GenerateSplitModeRunConfigurationsTaskTest : IntelliJPluginTestBase() {
             """
             <component name="ProjectRunConfigurationManager">
               <configuration default="false" name="Run IDE (Frontend)" type="GradleRunConfiguration" factoryName="Gradle">
+                <log_file alias="Frontend IDE logs" path="${'$'}PROJECT_DIR$/.intellijPlatform/sandbox/*/*/log_runIdeFrontend/frontend/*/idea.log" show_all="true" skipped="false" />
                 <ExternalSystemSettings>
                   <option name="executionName" />
                   <option name="externalProjectPath" value="${'$'}PROJECT_DIR${'$'}" />
                   <option name="externalSystemIdString" value="GRADLE" />
-                  <option name="scriptParameters" value="" />
+                  <option name="scriptParameters" value="--purge-old-log-directories" />
                   <option name="taskDescriptions">
                     <list />
                   </option>

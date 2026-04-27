@@ -7,10 +7,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.ide.idea.IdeaPlugin
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.intellij.platform.gradle.Constants.CACHE_DIRECTORY
@@ -29,6 +33,7 @@ import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtensi
 import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension.PluginConfiguration.*
 import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformRepositoriesExtension
 import org.jetbrains.intellij.platform.gradle.get
+import org.jetbrains.intellij.platform.gradle.plugins.configureKotlinJvmToolchainConventions
 import org.jetbrains.intellij.platform.gradle.models.productInfo
 import org.jetbrains.intellij.platform.gradle.plugins.checkGradleVersion
 import org.jetbrains.intellij.platform.gradle.plugins.enableComposeHotReloadCompilerOptions
@@ -38,6 +43,7 @@ import org.jetbrains.intellij.platform.gradle.services.registerClassLoaderScoped
 import org.jetbrains.intellij.platform.gradle.tasks.*
 import org.jetbrains.intellij.platform.gradle.tasks.aware.*
 import org.jetbrains.intellij.platform.gradle.utils.*
+import kotlin.getValue
 
 abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
 
@@ -119,7 +125,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
                         $message
                         Please ensure there is a single IntelliJ Platform dependency defined in your project and that the necessary repositories, where it can be located, are added.
                         See: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
-                        """.trimIndent()
+                        """.trimIndent(),
                     )
                 }
 
@@ -219,7 +225,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
                     addAllLater(
                         project.provider {
                             dependenciesHelper.createJetBrainsRuntimeObtainedDependency()
-                        }
+                        },
                     )
                 }
             }
@@ -284,8 +290,8 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
                         project.providers[GradleProperties.VerifyPluginDefaultRecommendedIdes].flatMap { enabled ->
                             when {
                                 enabled &&
-                                    intellijPluginVerifierIdesDependencyConfiguration.dependencies.isEmpty() &&
-                                    intellijPluginVerifierIdesLocalConfiguration.dependencies.isEmpty() ->
+                                        intellijPluginVerifierIdesDependencyConfiguration.dependencies.isEmpty() &&
+                                        intellijPluginVerifierIdesLocalConfiguration.dependencies.isEmpty() ->
                                     dependenciesHelper.createIntelliJPluginVerifierIdeDependencies(
                                         dependenciesHelper.createRecommendedPluginVerifierIdesValueSource(),
                                     )
@@ -325,7 +331,8 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
                 description = "Java Compiler used by Ant tasks",
             ) {
                 defaultDependencies {
-                    val addDefaultDependenciesProvider = project.providers[GradleProperties.AddDefaultIntelliJPlatformDependencies]
+                    val addDefaultDependenciesProvider =
+                        project.providers[GradleProperties.AddDefaultIntelliJPlatformDependencies]
                     val instrumentCodeProvider = project.extensionProvider.flatMap { it.instrumentCode }
 
                     addAllLater(
@@ -348,7 +355,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
 
             val intellijPlatformTestDependenciesConfiguration = create(
                 name = Configurations.INTELLIJ_PLATFORM_TEST_DEPENDENCIES,
-                description = "IntelliJ Platform Test Dependencies"
+                description = "IntelliJ Platform Test Dependencies",
             ) {
                 extendsFrom(
                     intellijPlatformTestPluginConfiguration,
@@ -358,13 +365,13 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
             }
             create(
                 name = Configurations.INTELLIJ_PLATFORM_CLASSPATH,
-                description = "IntelliJ Platform Classpath resolvable configuration"
+                description = "IntelliJ Platform Classpath resolvable configuration",
             ) {
                 extendsFrom(intellijPlatformConfiguration)
             }
             create(
                 name = Configurations.INTELLIJ_PLATFORM_TEST_CLASSPATH,
-                description = "IntelliJ Platform Test Classpath resolvable configuration"
+                description = "IntelliJ Platform Test Classpath resolvable configuration",
             ) {
                 extendsFrom(
                     intellijPlatformConfiguration,
@@ -374,7 +381,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
             }
             create(
                 name = Configurations.INTELLIJ_PLATFORM_TEST_RUNTIME_CLASSPATH,
-                description = "IntelliJ Platform Test Runtime Classpath resolvable configuration"
+                description = "IntelliJ Platform Test Runtime Classpath resolvable configuration",
             ) {
                 attributes {
                     attributes.attribute(Attributes.kotlinJPlatformType, "jvm")
@@ -386,7 +393,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
             }
             create(
                 name = Configurations.INTELLIJ_PLATFORM_TEST_RUNTIME_FIX_CLASSPATH,
-                description = "IntelliJ Platform Test Runtime Fix Classpath"
+                description = "IntelliJ Platform Test Runtime Fix Classpath",
             ) {
                 defaultDependencies {
                     addAllLater(
@@ -405,7 +412,7 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
             }
             create(
                 name = Configurations.INTELLIJ_PLATFORM_RUNTIME_CLASSPATH,
-                description = "IntelliJ Platform Runtime Classpath resolvable configuration"
+                description = "IntelliJ Platform Runtime Classpath resolvable configuration",
             ) {
                 attributes {
                     attributes.attribute(Attributes.kotlinJPlatformType, "jvm")
@@ -486,18 +493,37 @@ abstract class IntelliJPlatformBasePlugin : Plugin<Project> {
             }
         }
 
-        project.extensions.configure<JavaPluginExtension> {
-            toolchain.languageVersion.convention(
-                project.cachedProvider {
-                    project.configurations[Configurations.INTELLIJ_PLATFORM_DEPENDENCY]
-                        .asLenient
-                        .productInfo()
-                        .buildNumber
-                        .toVersion()
-                        .toPlatformJavaVersion()
-                        .majorVersion
-                        .toInt()
-                }.map(JavaLanguageVersion::of)
+        // Setup a default Java language based on the IntelliJ Platform dependency
+        val intellijPlatformJavaLanguageVersion = project.cachedProvider {
+            project.configurations[Configurations.INTELLIJ_PLATFORM_DEPENDENCY]
+                .asLenient
+                .productInfo()
+                .buildNumber
+                .toVersion()
+                .toPlatformJavaVersion()
+                .majorVersion
+                .toInt()
+        }.map(JavaLanguageVersion::of)
+        val javaExtension = project.extensions.getByType<JavaPluginExtension>()
+        val requestedJavaLanguageVersion = javaExtension.toolchain.languageVersion.orElse(intellijPlatformJavaLanguageVersion)
+        val javaToolchainService = project.extensions.getByType<JavaToolchainService>()
+
+        project.tasks.withType<JavaCompile>().configureEach {
+            options.release.convention(requestedJavaLanguageVersion.map { it.toString().toInt() })
+            javaCompiler.convention(
+                javaToolchainService.compilerFor {
+                    languageVersion = requestedJavaLanguageVersion
+                    vendor = javaExtension.toolchain.vendor
+                    implementation = javaExtension.toolchain.implementation
+                }
+            )
+        }
+
+        project.pluginManager.withPlugin(Plugins.External.KOTLIN) {
+            project.configureKotlinJvmToolchainConventions(
+                requestedJavaLanguageVersion = requestedJavaLanguageVersion,
+                javaExtension = javaExtension,
+                javaToolchainService = javaToolchainService,
             )
         }
 
