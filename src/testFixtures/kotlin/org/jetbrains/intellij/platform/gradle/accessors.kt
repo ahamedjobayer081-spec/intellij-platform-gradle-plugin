@@ -38,7 +38,7 @@ val IntelliJPlatformTestBase.cacheDirectory: Path
     get() = dir.resolve(Constants.CACHE_DIRECTORY)
 
 /**
- * Resolves the path to the IntelliJ Platform cache directory: `.intellijPlatform/`.
+ * Resolves the path to the IntelliJ Platform sandbox container under the current test project.
  */
 val IntelliJPlatformTestBase.sandboxDirectory: Path
     get() = cacheDirectory.resolve(Sandbox.CONTAINER)

@@ -16,9 +16,10 @@ import kotlin.test.assertEquals
 abstract class IntelliJPlatformTestBase {
 
     val isCI = (System.getenv("CI") ?: "false").toBoolean()
+    // Keep TestKit debugging opt-in. Enabling it for every local run adds significant overhead.
     private val testKitDebugEnabled = System.getProperty("test.gradle.debug")
         ?.toBoolean()
-        ?: (!isCI || java.lang.Boolean.getBoolean("org.gradle.testkit.debug"))
+        ?: false
     private val testKitOutputForwardingEnabled = System.getProperty("test.gradle.forwardOutput")
         ?.toBoolean()
         ?: false
@@ -37,7 +38,8 @@ abstract class IntelliJPlatformTestBase {
     val gradleVersion = System.getProperty("test.gradle.version").takeUnless { it.isNullOrEmpty() } ?: gradleDefault
     val gradleHome = Path(System.getProperty("test.gradle.home")).createDirectories()
     val testKitDir = gradleHome.resolve(".testKit").createDirectories()
-    val idesCacheDir = gradleHome.resolve(".ides").createDirectories()
+    val intellijPlatformCacheDir = gradleHome.resolve(".intellijPlatform").createDirectories()
+    val idesCacheDir = intellijPlatformCacheDir.resolve("ides").createDirectories()
 
     val intellijPlatformType = System.getProperty("test.intellijPlatform.type").takeUnless { it.isNullOrEmpty() }
         ?: throw GradleException("'test.intellijPlatform.type' isn't provided")
@@ -221,7 +223,6 @@ abstract class IntelliJPlatformTestBase {
                 }
             }
             .withArguments(
-                "-Dorg.gradle.kotlin.dsl.scriptCompilationAvoidance=false", // workaround for https://github.com/gradle/gradle/issues/25412
                 *projectProperties
                     .run { this + mapOf("platformVersion" to System.getenv("PLATFORM_VERSION")).filterNot { it.value == null } }
                     .map { "-P${it.key}=${it.value}" }

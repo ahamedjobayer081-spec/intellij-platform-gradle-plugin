@@ -195,9 +195,8 @@ class DependenciesValidationIntegrationTest : IntelliJPlatformIntegrationTestBas
         buildAndFail(Tasks.VERIFY_PLUGIN_PROJECT_CONFIGURATION) {
             assertContains(
                 """
-                > Failed to query the value of task ':verifyPluginProjectConfiguration' property 'runtimeDirectory'.
-                   > Could not resolve all files for configuration ':intellijPlatformDependency'.
-                      > Could not find $artifactCoordinates.
+                > Could not resolve all files for configuration ':intellijPlatformDependency'.
+                   > Could not find $artifactCoordinates.
                 """.trimIndent(),
                 output,
             )
@@ -342,7 +341,6 @@ class DependenciesValidationIntegrationTest : IntelliJPlatformIntegrationTestBas
                 """
                 compileClasspath - Compile classpath for 'main'.
                 +--- bundledPlugin:Git4Idea:$artifactVersion
-                |    +--- bundledPlugin:com.intellij:$artifactVersion
                 |    \--- bundledModule:intellij.platform.collaborationTools:$artifactVersion
                 |         +--- bundledModule:intellij.platform.vcs.dvcs.impl:$artifactVersion
                 |         |    +--- bundledModule:intellij.platform.vcs.log.impl:$artifactVersion
@@ -403,7 +401,6 @@ class DependenciesValidationIntegrationTest : IntelliJPlatformIntegrationTestBas
                 compileClasspath - Compile classpath for 'main'.
                 +--- bundledPlugin:Coverage:$artifactVersion
                 |    +--- bundledPlugin:com.intellij.java:$artifactVersion
-                |    |    \--- bundledPlugin:com.intellij:$artifactVersion
                 |    \--- bundledModule:intellij.platform.coverage:$artifactVersion
                 |         \--- bundledModule:intellij.platform.coverage.agent:$artifactVersion
                 \--- $artifactCoordinates

@@ -2,6 +2,7 @@
 
 package org.jetbrains.intellij.platform.gradle
 
+import org.jetbrains.intellij.platform.gradle.Constants.Sandbox
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.util.zip.ZipFile
@@ -15,11 +16,14 @@ open class IntelliJPlatformIntegrationTestBase(
     protected val useCache: Boolean = false,
 ) : IntelliJPlatformTestBase() {
     protected open val reuseProjectState = true
+    protected val sandboxDirectory: Path
+        get() = intellijPlatformCacheDir.resolve(Sandbox.CONTAINER)
 
     protected open val defaultProjectProperties: Map<String, Any> = mapOf(
         "intellijPlatform.version" to intellijPlatformVersion,
         "intellijPlatform.type" to intellijPlatformType,
         GradleProperties.SelfUpdateCheck.toString() to false,
+        GradleProperties.IntellijPlatformCache.toString() to intellijPlatformCacheDir.invariantSeparatorsPathString,
     )
 
     @BeforeTest
@@ -108,7 +112,7 @@ open class IntelliJPlatformIntegrationTestBase(
                     caching {
                         ides {
                             enabled = true
-                            path = File("${gradleHome.invariantSeparatorsPathString}", "ides")
+                            path = File("${idesCacheDir.invariantSeparatorsPathString}")
                         }
                     }
                 }

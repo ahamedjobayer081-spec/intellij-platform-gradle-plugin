@@ -8,7 +8,10 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.withType
+import org.jdom2.Element
 import org.jetbrains.intellij.platform.gradle.Constants.Configurations
 import org.jetbrains.intellij.platform.gradle.GradleProperties
 import org.jetbrains.intellij.platform.gradle.get
@@ -19,9 +22,12 @@ import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 
 private const val IDEA_PLUGIN_ROOT = "idea-plugin"
+private const val EXTENSION_POINTS = "extensionPoints"
+private const val EXTENSION_POINT = "extensionPoint"
 private const val EXTENSIONS = "extensions"
 private const val DEFAULT_EXTENSION_NAMESPACE = "defaultExtensionNs"
 private const val INTELLIJ_NAMESPACE = "com.intellij"
+private const val CONFIGURABLE_MARKER = "configurable"
 
 private val configurableExtensionPointNames = setOf(
     "applicationConfigurable",
@@ -34,17 +40,11 @@ private val qualifiedConfigurableExtensionPointNames = configurableExtensionPoin
 internal fun Project.searchableOptionsDescriptorFiles() = files(
     provider {
         buildList {
-            addAll(mainProjectSearchableOptionsDescriptorFiles())
+            addAll(searchableOptionsDescriptorFilesFromMainResources())
 
             addAll(
                 relevantSearchableOptionsModuleProjects()
-                    .flatMap { moduleProject: Project ->
-                        val metaInfDirectory = moduleProject.projectDir.resolve("src/main/resources/META-INF")
-                        metaInfDirectory
-                            .listFiles { file -> file.isFile && file.extension == "xml" }
-                            .orEmpty()
-                            .toList()
-                    }
+                    .flatMap(Project::searchableOptionsDescriptorFilesFromMainResources)
             )
         }
     },
@@ -58,12 +58,12 @@ internal fun Project.buildSearchableOptionsEnabledProvider(): Provider<Boolean> 
     return provider {
         forceBuildSearchableOptionsProvider.get() || (
                 buildSearchableOptionsEnabledProvider.get() &&
-                        searchableOptionsDescriptorFiles.files.any { it.toPath().hasConfigurableExtensionPoint() }
+                        searchableOptionsDescriptorFiles.files.any { it.toPath().hasSearchableOptionsContent() }
                 )
     }
 }
 
-internal fun Path.hasConfigurableExtensionPoint(): Boolean {
+internal fun Path.hasSearchableOptionsContent(): Boolean {
     if (!exists()) {
         return false
     }
@@ -71,17 +71,10 @@ internal fun Path.hasConfigurableExtensionPoint(): Boolean {
     return runCatching {
         inputStream().use { inputStream ->
             val rootElement = JDOMUtil.loadDocument(inputStream).rootElement
+            val hasSearchableOptionsContent = rootElement.hasConfigurableExtensionPointDeclaration() ||
+                    rootElement.hasConfigurableExtension()
 
-            rootElement.name == IDEA_PLUGIN_ROOT && rootElement
-                .getChildren(EXTENSIONS)
-                .any { extensions ->
-                    val defaultExtensionNamespace = extensions.getAttributeValue(DEFAULT_EXTENSION_NAMESPACE)
-
-                    extensions.children.any { child ->
-                        child.name in qualifiedConfigurableExtensionPointNames ||
-                                (defaultExtensionNamespace == INTELLIJ_NAMESPACE && child.name in configurableExtensionPointNames)
-                    }
-                }
+            rootElement.name == IDEA_PLUGIN_ROOT && hasSearchableOptionsContent
         }
     }.getOrDefault(false)
 }
@@ -92,17 +85,54 @@ private fun Project.relevantSearchableOptionsModuleProjects(): List<Project> = l
 ).flatMap { configurationName ->
     configurations[configurationName]
         .allDependencies
-        .withType(ProjectDependency::class.java)
+        .withType<ProjectDependency>()
         .mapNotNull { dependency: ProjectDependency -> rootProject.findProject(dependency.path) }
 }.distinctBy { moduleProject: Project -> moduleProject.path }
 
-private fun Project.mainProjectSearchableOptionsDescriptorFiles(): List<File> {
-    val sourceSets = extensions.findByType(SourceSetContainer::class.java) ?: return emptyList()
+private fun Project.searchableOptionsDescriptorFilesFromMainResources(): List<File> {
+    val sourceSets = extensions.findByType<SourceSetContainer>() ?: return emptyList()
 
     return sourceSets.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
         ?.resources
         ?.srcDirs
-        ?.map { it.resolve("META-INF/plugin.xml") }
-        ?.filter(File::exists)
+        ?.flatMap { resourceDirectory ->
+            buildList {
+                addAll(resourceDirectory.xmlFiles())
+                addAll(resourceDirectory.resolve("META-INF").xmlFiles())
+            }
+        }
+        ?.distinct()
         .orEmpty()
+}
+
+private fun File.xmlFiles() = listFiles { file -> file.isFile && file.extension == "xml" }
+    .orEmpty()
+    .toList()
+
+private fun Element.hasConfigurableExtensionPointDeclaration() = getChildren(EXTENSION_POINTS)
+    .any { extensionPoints ->
+        extensionPoints.children.any { child ->
+            child.name == EXTENSION_POINT && child.attributes.any { attribute ->
+                attribute.value.contains(CONFIGURABLE_MARKER, ignoreCase = true)
+            }
+        }
+    }
+
+private fun Element.hasConfigurableExtension() = getChildren(EXTENSIONS)
+    .any { extensions ->
+        val defaultExtensionNamespace = extensions.getAttributeValue(DEFAULT_EXTENSION_NAMESPACE)
+
+        extensions.children.any { child ->
+            val extensionPointName = child.name
+            val qualifiedExtensionPointName = extensionPointName.toQualifiedExtensionPointName(defaultExtensionNamespace)
+
+            qualifiedExtensionPointName in qualifiedConfigurableExtensionPointNames ||
+                    qualifiedExtensionPointName.contains(CONFIGURABLE_MARKER, ignoreCase = true)
+        }
+    }
+
+private fun String.toQualifiedExtensionPointName(defaultExtensionNamespace: String?) = when {
+    contains('.') -> this
+    defaultExtensionNamespace != null -> "$defaultExtensionNamespace.$this"
+    else -> this
 }

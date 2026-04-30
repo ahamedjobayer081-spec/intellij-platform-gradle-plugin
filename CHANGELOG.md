@@ -3,6 +3,20 @@
 ## [next]
 
 ### Added
+
+- Cache a serialized IDE layout index and reuse it for bundled plugin/module dependency resolution, test runtime classpath collection, and `printBundledPlugins`/`printBundledModules`.
+
+### Fixed
+
+- Avoid resolving the JetBrains Runtime for `buildSearchableOptions` when searchable options are skipped, while keeping JBR resolution for tests and IDE run tasks.
+- Refactor Kotlin JVM toolchain configuration into a dedicated utility and add an isolation test for Kotlin Gradle API links.
+- Dependency verification fails because of a "corrupted" asc because of ivy misconfiguration JetBrains/intellij-platform-gradle-plugin#2140
+- Include `$legacy_jps_module` namespace in module descriptor handling and update related tests
+
+## [2.15.0] - 2026-04-24
+
+### Added
+
 - Apply Gradle Changelog Plugin conventions automatically when `org.jetbrains.changelog` is present, including default changelog extension values, `changeNotes`, and `publishPlugin` wiring.
 - Supported upcoming changes in module-descriptors.jar format in 262.* IDEs.
 - Skip `buildSearchableOptions` when the main plugin descriptor and included module descriptors do not declare Configurable extension points.
@@ -24,7 +38,9 @@
 ### Fixed
 
 - Fixed incorrectly calculated module descriptor coordinates used for excluding transitive dependencies. JetBrains/intellij-platform-gradle-plugin#2127 
-- Refactor `ComposedJarTask` module naming logic and remove redundant test method from `IntelliJPlatformTestingExtensionTest`. JetBrains/intellij-platform-gradle-plugin#2124 
+- Refactor `ComposedJarTask` module naming logic and remove redundant test method from `IntelliJPlatformTestingExtensionTest`. JetBrains/intellij-platform-gradle-plugin#2124
+- Replace hardcoded `"com.intellij"` with centralized `IDEA_CORE` constant in dependency resolution and filtering logic. JetBrains/intellij-platform-gradle-plugin#2137
+- Refactor IntelliJ Gradle plugin to improve Java and Kotlin toolchain configuration handling, ensuring proper defaults and streamlined overrides. JetBrains/intellij-platform-gradle-plugin#2120
 
 ## [2.14.0] - 2026-04-09
 
@@ -1736,7 +1752,8 @@ The `2.0.0` release is completely rewritten. Please see [documentation page](htt
 
 - Support for attaching IntelliJ sources in IDEA
 
-[next]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.14.0...HEAD
+[next]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.15.0...HEAD
+[2.15.0]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.14.0...v2.15.0
 [2.14.0]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.13.1...v2.14.0
 [2.13.1]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.13.0...v2.13.1
 [2.13.0]: https://github.com/JetBrains/intellij-platform-gradle-plugin/compare/v2.12.0...v2.13.0
